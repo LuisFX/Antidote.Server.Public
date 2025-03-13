@@ -1,0 +1,17 @@
+STORAGE: NONE
+NUGET
+  remote: https://api.nuget.org/v3/index.json
+    Falco (5.0)
+      Falco.Markup (>= 1.1.1) - restriction: >= net8.0
+      FSharp.Core (>= 6.0) - restriction: >= net8.0
+    Falco.Markup (1.1.1) - restriction: >= net8.0
+      FSharp.Core (>= 4.5.2) - restriction: >= netstandard2.0
+    Falco.OpenApi (1.0)
+      Falco (>= 5.0) - restriction: >= net8.0
+      FSharp.Core (>= 9.0.101) - restriction: >= net8.0
+      Microsoft.AspNetCore.OpenApi (>= 8.0.12) - restriction: >= net8.0
+    FSharp.Core (9.0.201) - restriction: >= net8.0
+    Microsoft.AspNetCore.OpenApi (9.0.3) - restriction: >= net8.0
+      Microsoft.OpenApi (>= 1.6.17) - restriction: >= net9.0
+    Microsoft.OpenApi (1.6.23) - restriction: >= net9.0
+    Scalar.AspNetCore (2.0.30)
