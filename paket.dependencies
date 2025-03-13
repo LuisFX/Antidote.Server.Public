@@ -3,4 +3,5 @@ source https://api.nuget.org/v3/index.json
 storage: none
 nuget Falco
 nuget Falco.OpenAPI
+nuget Microsoft.AspNetCore.Authentication.JwtBearer
 nuget Scalar.AspNetCore

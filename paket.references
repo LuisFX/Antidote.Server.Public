@@ -1,3 +1,4 @@
 Falco
 Falco.OpenAPI
 Scalar.AspNetCore
+Microsoft.AspNetCore.Authentication.JwtBearer
