@@ -1,8 +1,10 @@
 namespace OpenApi
 
+open System
 open Falco
 open Falco.OpenApi
 open Falco.Routing
+open Falco.Markup
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
@@ -11,6 +13,10 @@ open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.IdentityModel.Tokens
 open System.Text
+open System.IdentityModel.Tokens.Jwt
+open System.Security.Claims
+open System.Threading.Tasks
+
 
 type FortuneInput =
     { Name : string }
@@ -27,8 +33,16 @@ type Fortune =
 type Greeting =
     { Message : string }
 
+type LoginInput =
+    { Username : string
+      Password : string }
+
+type LoginResponse =
+    { Token : string }
 
 module Program =
+    open System.IO
+    open Falco.Markup
 
     let authScheme = JwtBearerDefaults.AuthenticationScheme
 
@@ -87,7 +101,6 @@ module Program =
                 |> OpenApi.acceptsType typeof<string>
                 |> OpenApi.returnType typeof<Greeting>
 
-    
     let fortuneHandler =
         mapPost "/fortune"
                 (fun r -> r?age.AsIntOption())
@@ -101,12 +114,89 @@ module Program =
                 |> OpenApi.acceptsType typeof<FortuneInput>
                 |> OpenApi.returnType typeof<Fortune>
 
+    let loginHandler =
+        mapPost "/login"
+            (fun req ->
+                Request.mapJson<LoginInput> (fun loginInput ->
+                    // Validate user credentials and return a JWT token (placeholder)
+                    if loginInput.Username = "user" && loginInput.Password = "password" then
+                        let claims = [ Claim(ClaimTypes.Name, loginInput.Username) ]
+                        let key = SymmetricSecurityKey(Encoding.UTF8.GetBytes("yoursecret"))
+                        let creds = SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+                        let token = JwtSecurityToken(
+                            issuer = "yourissuer",
+                            audience = "youraudience",
+                            claims = claims,
+                            expires = System.DateTime.Now.AddMinutes(30.0),
+                            signingCredentials = creds
+                        )
+                        let tokenString = JwtSecurityTokenHandler().WriteToken(token)
+                        { Token = tokenString } |> Response.ofJson
+                    else
+                        Response.withStatusCode 401 >> Response.ofPlainText "Invalid credentials"
+                )
+            )
+            Response.ofJson
+            |> OpenApi.name "Login"
+            |> OpenApi.summary "Authenticate a user"
+            |> OpenApi.description "Authenticate a user and receive a JWT token."
+            |> OpenApi.acceptsType typeof<LoginInput>
+            |> OpenApi.returnType typeof<LoginResponse>
+
+    let responseTemplate color content =
+        Elem.div [ Attr.class' "heading" ] [
+        Text.h1 "Hello world!" ]
+
+    let uploadHandler context: Task  =
+        
+        task {
+            // Falco can also use aspnet's features directly
+            // but offers an F# API for ease of use
+            let! form = Request.getForm context
+            // let! auth = Request.ifAuthenticated "sss" (fun _ -> task { return true }) context
+
+            let extractedFile =
+                // extract the file safely from the
+                // IFormFileCollection in the http context
+                form.Files
+                |> Option.bind (fun form ->
+                    // try to extract the uploaded file named after the "name" attribute in html
+                    // GetFile returns null if no file is present, so we safely convert it into an optional value
+                    form.GetFile "my-uploaded-file" |> Option.ofObj)
+
+            match extractedFile with
+            | Some file ->
+                // if the file is present in the request, then we can do anything we want here
+                // from validating size, extension, content type, etc., etc.
+
+                // For our use case we'll create a disposable stream reader to get the text content of the file
+                use reader = new StreamReader(file.OpenReadStream())
+                // in our simple use case we'll just read the content into a single string
+                let! content = reader.ReadToEndAsync()
+
+                // we'll write the file to disk just as a sample
+                // we could upload it to S3, Google Buckets, Azure Storage as well
+                do! File.WriteAllTextAsync($"./{Guid.NewGuid()}.txt", content)
+
+                // We received a file and we've "processed it" successfully
+                let content = responseTemplate "green" content
+                // send our HTML content to the client and that's it
+                return! Response.ofHtml content context
+            | None ->
+                // The file was not found in the request return something
+                let content = responseTemplate "tomato" "The file was not provided"
+
+                return! context |> Response.withStatusCode 400 |> Response.ofHtml content
+        }
+
+
     let endpoints =
         [
             greeterHandler
             fortuneHandler
             testAuth
-            // mapGet "/secure" (fun _ -> secureResourceHandler)
+            loginHandler
+            post "/upload" uploadHandler
         ]
 
     [<EntryPoint>]
