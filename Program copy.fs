@@ -16,6 +16,7 @@ open System.Text
 open System.IdentityModel.Tokens.Jwt
 open System.Security.Claims
 open System.Threading.Tasks
+open Scalar.AspNetCore
 
 
 type FortuneInput =
@@ -40,64 +41,39 @@ type LoginInput =
 type LoginResponse =
     { Token : string }
 
-
-
 module Program =
     open System.IO
     open Falco.Markup
-    let authenticate
-        (authScheme : string)
-        (next : bool -> HttpHandler) : HttpHandler = fun ctx ->
-        task {
-            // this is stubbed out to throw null!!!!!!
-            let authResult = AuthenticationHttpContextExtensions.AuthenticateAsync(ctx) |> Async.AwaitTask |> Async.RunSynchronously
-            // let! authenticateResult = ctx.AuthenticateAsync()
-            printfn "Authenticate result: %A" authResult.Succeeded
-            return! next authResult.Succeeded ctx
-        }
-
-    /// Authenticate the current request using the default authentication scheme.
-    ///
-    /// Proceeds if the authentication status of current `IPrincipal` is true.
-    ///
-    /// The default authentication scheme can be configured using
-    /// `Microsoft.AspNetCore.Authentication.AuthenticationOptions.DefaultAuthenticateScheme.`
-    let ifAuthenticated
-        (authScheme : string)
-        (handleOk : HttpHandler) : HttpHandler =
-        authenticate authScheme (fun authenticateResult ctx ->
-            if authenticateResult then
-                handleOk ctx
-            else
-                ctx.ForbidAsync())
 
     let authScheme = JwtBearerDefaults.AuthenticationScheme
-
-    printfn "Auth Sheme: %A" authScheme
 
     let secureResourceHandler : HttpHandler =
         fun ctx ->
             let handleAuth : HttpHandler =
                 Response.ofPlainText "Hello authenticated user"
 
-            let ttt = 
-                match ctx.Request.Headers.TryGetValue("Authorization") with
-                | true, value -> value
-                | _ -> Microsoft.Extensions.Primitives.StringValues.Empty
-            printfn $"Secure resource handler: {ttt}"
-
-            ifAuthenticated authScheme handleAuth ctx
+            Request.ifAuthenticated authScheme handleAuth ctx
 
     let secureResourceEndpoint =
         get "/secure" secureResourceHandler
-        |> OpenApi.name "SecureResource"
-        |> OpenApi.summary "A secure resource"
-        |> OpenApi.description "This endpoint is a secure resource that requires authentication."
+
+    let rootHandler =
+        get "/" (Response.ofPlainText "Hello world")
+        |> OpenApi.name "HelloWorld"
+        |> OpenApi.summary "This is a summary"
+        |> OpenApi.description "This is a test description, which is the long form of the summary."
+        |> OpenApi.returnType typeof<string>
+
+    let rootHandler2 =
+        get "/dd" (Response.ofPlainText "Hello world dd")
+        |> OpenApi.name "HelloWorlddd"
+        |> OpenApi.summary "This is a summary"
+        |> OpenApi.description "This is a test description, which is the long form of the summary."
         |> OpenApi.returnType typeof<string>
 
 
     let testAuth =
-        mapGet "/test/{name?}"
+        mapPost "/test/{name?}"
             (fun req ->
                 printfn $"MATCHED TO GET /test/{req?name.AsString()}"
                 match req?name.AsString() with
@@ -116,8 +92,8 @@ module Program =
                 |> OpenApi.description "This endpoint will test authentication."
                 |> OpenApi.route [
                     { Type = typeof<string>; Name = "Name"; Required = false } ]
-                |> OpenApi.query [
-                    { Type = typeof<int>; Name = "Age"; Required = false } ]
+                // |> OpenApi.query [
+                //     { Type = typeof<int>; Name = "Age"; Required = false } ]
                 |> OpenApi.acceptsType typeof<string>
                 |> OpenApi.returnType typeof<string>
 
@@ -238,9 +214,11 @@ module Program =
 
     let endpoints =
         [
-            secureResourceEndpoint
-            greeterHandler
-            fortuneHandler
+            rootHandler
+            rootHandler2
+            // secureResourceEndpoint
+            // greeterHandler
+            // fortuneHandler
             testAuth
             // loginHandler
             // post "/upload" uploadHandler
@@ -253,59 +231,28 @@ module Program =
         bldr.Services
             .AddAuthorization()
             .AddAntiforgery()
+            .AddOpenApi()
             .AddFalcoOpenApi()
             .AddSwaggerGen()
+            
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer( fun options ->
+            .AddJwtBearer(fun options ->
                 options.TokenValidationParameters <- TokenValidationParameters(
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = "https://localhost:5169", // Replace with your actual issuer
-                    ValidAudience = "youraudience",        // Replace with your actual audience
-                    IssuerSigningKey = SymmetricSecurityKey(
-                        "edfe8827408477d5290538b0ca2177708d51bb6dee6e047019065f5474cdf942f0d3d882c07da3d344cd2f2a7cd0cb212ae8ee44a3c52a30043c20e66f706bea54071ee5aed7807a724af744048b9270c7a0b6b3f1fc0a089cfa8cd63249c1d2a069f22ff7c45c3b82a1ba8099774f311d147cbeb19e25f3d62ef73bd8f4f8230f16d92dbe0b4f514c8a74b7e83a507d29d37683afb9b155e7ac837337b879ee45194810104a5c9091a23efb538fc0bfef3414ba496cc022f876946641652093cc220cfc249c721b4ef2eb50e7b755ef2e1843e91f1cf516b157df5190495e15bd201db688e6076c53f791f85cc77d4ce5a3047ba15228d9da1c4007e6e767ee98b4fa75bb8858e4a53b2b0ef4b2f4e8dde50806424254458f631e00a112f43f" 
-                        |> Convert.FromBase64String
-                    ) // Replace with your secret key
+                    ValidIssuer = "yourissuer",
+                    ValidAudience = "youraudience",
+                    IssuerSigningKey = SymmetricSecurityKey(Encoding.UTF8.GetBytes("yoursecret"))
                 )
-                options.Events <- JwtBearerEvents(
-                    OnAuthenticationFailed = fun context ->
-                        task {
-                            printfn "Authentication failed: %A" context.Exception
-                            return ()
-                        }
-                    // OnTokenValidated = fun context ->
-                    //     task {
-                    //         // Extract  claims from the token
-                    //         let claimsPrincipal = context.Principal
-                    //         let claims = claimsPrincipal.Claims |> Seq.toList
-
-                    //         printfn "Claims: %A" claims
-
-                    //         // Example: Validate a custom claim
-                    //         let adminClaim =
-                    //             claims
-                    //             |> List.tryFind (fun claim -> claim.Type = "admin")
-
-                    //         match adminClaim with
-                    //         | Some claim when claim.Value = "true" ->
-                    //             // Custom validation passed
-                    //             printfn "Custom validation succeeded."
-                    //             return ()
-                    //         | _ ->
-                    //             // Custom validation failed
-                    //             printfn "Custom validation failed."
-                    //             context.Fail("Invalid token: Missing or invalid 'admin' claim.")
-                    //             return ()
-                    //     }
-                )
-                // options.Authority <- "https://localhost:5169" // Optional if you are using a trusted authority
-                // options.MapInboundClaims <- false
             )
         |> ignore
 
         let wapp = bldr.Build()
+        wapp.MapOpenApi() |> ignore
+        wapp.MapScalarApiReference() |> ignore
+
 
         wapp.UseHttpsRedirection()
             .UseAntiforgery()
@@ -313,16 +260,16 @@ module Program =
             .UseSwaggerUI()
             .UseAuthentication()
             .UseAuthorization()
-            .UseRouting()
-            .UseFalco(endpoints)
         |> ignore
 
-        wapp.Run()
+        wapp.UseRouting()
+            .UseFalco(endpoints)
+            .Run()
 
         0
 
 // curl -X 'POST' \
-//   'http://localhost:5169/secure' \
+//   'http://localhost:5169/test' \
 //   -H 'accept: application/json' \
 //   -H 'Content-Type: text/plain' \
 //   -H 'Authorization: Bearer yourtoken' \
