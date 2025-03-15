@@ -16,7 +16,7 @@ open System.Text
 open System.IdentityModel.Tokens.Jwt
 open System.Security.Claims
 open System.Threading.Tasks
-
+open Microsoft.AspNetCore.Http
 
 type FortuneInput =
     { Name : string }
@@ -75,18 +75,27 @@ module Program =
 
     printfn "Auth Sheme: %A" authScheme
 
+    let apiKeyHeaderName = "X-API-Key"
+    let validApiKey = "your-dev-api-key"
+
+    let authenticateWithApiKey (next: HttpHandler) : HttpHandler = fun ctx ->
+        task {
+            let headersSingleString = ctx.Request.Headers.ToString()
+            printfn "HEADERS: %A" headersSingleString
+            match ctx.Request.Headers.TryGetValue(apiKeyHeaderName) with
+            | true, apiKey when apiKey.ToString() = validApiKey ->
+                return! next ctx
+            | _ ->
+                ctx.Response.StatusCode <- StatusCodes.Status401Unauthorized
+                return! ctx.Response.WriteAsync("Unauthorized: Invalid API Key")
+        }
+
     let secureResourceHandler : HttpHandler =
         fun ctx ->
             let handleAuth : HttpHandler =
                 Response.ofPlainText "Hello authenticated user"
 
-            let ttt = 
-                match ctx.Request.Headers.TryGetValue("Authorization") with
-                | true, value -> value
-                | _ -> Microsoft.Extensions.Primitives.StringValues.Empty
-            printfn $"Secure resource handler: {ttt}"
-
-            ifAuthenticated authScheme handleAuth ctx
+            authenticateWithApiKey handleAuth ctx
 
     let secureResourceEndpoint =
         get "/secure" secureResourceHandler
@@ -242,7 +251,6 @@ module Program =
             greeterHandler
             fortuneHandler
             testAuth
-            // loginHandler
             // post "/upload" uploadHandler
         ]
 
@@ -254,54 +262,15 @@ module Program =
             .AddAuthorization()
             .AddAntiforgery()
             .AddFalcoOpenApi()
-            .AddSwaggerGen()
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer( fun options ->
-                options.TokenValidationParameters <- TokenValidationParameters(
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = "https://localhost:5169", // Replace with your actual issuer
-                    ValidAudience = "youraudience",        // Replace with your actual audience
-                    IssuerSigningKey = SymmetricSecurityKey(
-                        "edfe8827408477d5290538b0ca2177708d51bb6dee6e047019065f5474cdf942f0d3d882c07da3d344cd2f2a7cd0cb212ae8ee44a3c52a30043c20e66f706bea54071ee5aed7807a724af744048b9270c7a0b6b3f1fc0a089cfa8cd63249c1d2a069f22ff7c45c3b82a1ba8099774f311d147cbeb19e25f3d62ef73bd8f4f8230f16d92dbe0b4f514c8a74b7e83a507d29d37683afb9b155e7ac837337b879ee45194810104a5c9091a23efb538fc0bfef3414ba496cc022f876946641652093cc220cfc249c721b4ef2eb50e7b755ef2e1843e91f1cf516b157df5190495e15bd201db688e6076c53f791f85cc77d4ce5a3047ba15228d9da1c4007e6e767ee98b4fa75bb8858e4a53b2b0ef4b2f4e8dde50806424254458f631e00a112f43f" 
-                        |> Convert.FromBase64String
-                    ) // Replace with your secret key
-                )
-                options.Events <- JwtBearerEvents(
-                    OnAuthenticationFailed = fun context ->
-                        task {
-                            printfn "Authentication failed: %A" context.Exception
-                            return ()
-                        }
-                    // OnTokenValidated = fun context ->
-                    //     task {
-                    //         // Extract  claims from the token
-                    //         let claimsPrincipal = context.Principal
-                    //         let claims = claimsPrincipal.Claims |> Seq.toList
-
-                    //         printfn "Claims: %A" claims
-
-                    //         // Example: Validate a custom claim
-                    //         let adminClaim =
-                    //             claims
-                    //             |> List.tryFind (fun claim -> claim.Type = "admin")
-
-                    //         match adminClaim with
-                    //         | Some claim when claim.Value = "true" ->
-                    //             // Custom validation passed
-                    //             printfn "Custom validation succeeded."
-                    //             return ()
-                    //         | _ ->
-                    //             // Custom validation failed
-                    //             printfn "Custom validation failed."
-                    //             context.Fail("Invalid token: Missing or invalid 'admin' claim.")
-                    //             return ()
-                    //     }
-                )
-                // options.Authority <- "https://localhost:5169" // Optional if you are using a trusted authority
-                // options.MapInboundClaims <- false
+            .AddSwaggerGen(
+                fun opts ->
+                    opts.SwaggerDoc("v1", Microsoft.OpenApi.Models.OpenApiInfo(Title = "Falco API", Version = "v1"))
+                    opts.AddSecurityDefinition("ApiKey", Microsoft.OpenApi.Models.OpenApiSecurityScheme(
+                        Description = "API Key required for authentication.",
+                        Name = apiKeyHeaderName,
+                        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey
+                    ))
             )
         |> ignore
 
@@ -311,8 +280,6 @@ module Program =
             .UseAntiforgery()
             .UseSwagger()
             .UseSwaggerUI()
-            .UseAuthentication()
-            .UseAuthorization()
             .UseRouting()
             .UseFalco(endpoints)
         |> ignore

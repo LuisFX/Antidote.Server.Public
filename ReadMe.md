@@ -5,4 +5,8 @@ https://stackoverflow.com/questions/67663848/idx10503-signature-validation-faile
 'Well done. Error is thrown any time string.IsNullOrEmpty(jwtToken.Header.Kid); happens and keysAttempted.Length > 0, which is misleading' 
     - when you generate a value that is larger than the security size, it passes without issue. Use the following website to GENERATE GREATER THAN 256: https://jwtsecret.com/generate
 
-
+# Curl Usage
+```sh
+curl --location 'http://localhost:5169/secure' \
+    --header 'X-API-Key: your-dev-api-key'
+```
