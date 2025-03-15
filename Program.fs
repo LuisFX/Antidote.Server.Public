@@ -76,18 +76,25 @@ module Program =
     printfn "Auth Sheme: %A" authScheme
 
     let apiKeyHeaderName = "X-API-Key"
-    let validApiKey = "your-dev-api-key"
+    let validApiKey = "dXNlcjpwYXNzd2Q=" // user:passwd
 
-    let authenticateWithApiKey (next: HttpHandler) : HttpHandler = fun ctx ->
+    let authenticateWithBasicAuth (next: HttpHandler) : HttpHandler = fun ctx ->
         task {
-            let headersSingleString = ctx.Request.Headers.ToString()
-            printfn "HEADERS: %A" headersSingleString
-            match ctx.Request.Headers.TryGetValue(apiKeyHeaderName) with
-            | true, apiKey when apiKey.ToString() = validApiKey ->
-                return! next ctx
-            | _ ->
+            let authHeader = ctx.Request.Headers.["Authorization"].ToString()
+            if authHeader.StartsWith("Basic ") then
+                let encodedCredentials = authHeader.Substring("Basic ".Length).Trim()
+                let decodedCredentials = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encodedCredentials))
+                let parts = decodedCredentials.Split(':')
+                printfn "Decoded credentials: %A" decodedCredentials
+                if parts.Length = 2 && parts.[0] = "user" && parts.[1] = "passwd" then
+                // if not (String.IsNullOrWhiteSpace decodedCredentials) then
+                    return! next ctx
+                else
+                    ctx.Response.StatusCode <- StatusCodes.Status401Unauthorized
+                    return! ctx.Response.WriteAsync("Unauthorized: Invalid credentials")
+            else
                 ctx.Response.StatusCode <- StatusCodes.Status401Unauthorized
-                return! ctx.Response.WriteAsync("Unauthorized: Invalid API Key")
+                return! ctx.Response.WriteAsync("Unauthorized: Missing or invalid Authorization header")
         }
 
     let secureResourceHandler : HttpHandler =
@@ -95,7 +102,7 @@ module Program =
             let handleAuth : HttpHandler =
                 Response.ofPlainText "Hello authenticated user"
 
-            authenticateWithApiKey handleAuth ctx
+            authenticateWithBasicAuth handleAuth ctx
 
     let secureResourceEndpoint =
         get "/secure" secureResourceHandler
@@ -265,12 +272,23 @@ module Program =
             .AddSwaggerGen(
                 fun opts ->
                     opts.SwaggerDoc("v1", Microsoft.OpenApi.Models.OpenApiInfo(Title = "Falco API", Version = "v1"))
-                    opts.AddSecurityDefinition("ApiKey", Microsoft.OpenApi.Models.OpenApiSecurityScheme(
-                        Description = "API Key required for authentication.",
-                        Name = apiKeyHeaderName,
+                    opts.AddSecurityDefinition("Basic", Microsoft.OpenApi.Models.OpenApiSecurityScheme(
+                        Description = "Basic Authentication with username and password.",
+                        Name = "Authorization",
                         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-                        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey
+                        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                        Scheme = "Basic"
                     ))
+                    let securityRequirement = Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
+                    securityRequirement.Add(
+                        Microsoft.OpenApi.Models.OpenApiSecurityScheme(
+                            Reference = Microsoft.OpenApi.Models.OpenApiReference(
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Basic"
+                            )
+                        ), [||]
+                    )
+                    opts.AddSecurityRequirement(securityRequirement)
             )
         |> ignore
 
