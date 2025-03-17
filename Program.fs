@@ -49,99 +49,115 @@ module Program =
     let welcomePage =
         Elem.html [ Attr.lang "en" ] [
             Elem.head [] [
-                Elem.title [] [ Text.raw "Welcome to Our API" ]
+                Elem.title [] [ Text.raw "Welcome to Healix API" ]
+                Elem.link [ Attr.rel "stylesheet"; Attr.href "https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css" ]
                 Elem.style [] [
                     Text.raw """
-                    body {
-                        font-family: Arial, sans-serif;
-                        margin: 0;
-                        padding: 0;
+                    :root {
+                        --primary-color: #05435c;
+                        --secondary-color: #EA7E7D;
+                        --background-light: #FFFFFF;
+                        --background-dark: #121212;
+                        --text-light: #434D56;
+                        --text-dark: #E6E6E6;
+                    }
+                    body.light-mode {
+                        background-color: var(--background-light);
+                        color: var(--text-light);
+                    }
+                    body.dark-mode {
+                        background-color: var(--background-dark);
+                        color: var(--text-dark);
                     }
                     .welcome-backdrop {
-                        background-color: #05435c;
+                        background-color: var(--primary-color);
                         background-image: url(https://dev.healix.antidote-ai.com/antidote_logo_slice.svg);
                         background-repeat: no-repeat;
                         background-position: center;
                         background-size: cover;
                         height: 100vh;
-                        z-index: 999;
                         display: flex;
                         justify-content: center;
                         align-items: center;
                     }
-                    .container {
-                        text-align: center;
-                        padding: 20px;
-                        max-width: 600px;
-                        background: #FFFFFF;
+                    .box {
+                        background: var(--background-light);
                         box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
                         border-radius: 8px;
                     }
-                    .link-button {
-                        display: inline-block;
-                        padding: 10px 20px;
-                        margin-top: 20px;
-                        background-color: #0E475F;
-                        color: #FFFFFF;
-                        border-radius: 5px;
-                        text-decoration: none;
-                        font-weight: bold;
+                    body.dark-mode .box {
+                        background: var(--background-dark);
                     }
-                    .link-button:hover {
-                        background-color: #DF5F2E;
+                    .title {
+                        color: var(--secondary-color);
                     }
-                    h1 {
-                        color: #EA7E7D;
+                    .subtitle {
+                        color: var(--text-light);
                     }
-                    p {
-                        color: #434D56;
-                    }
-                    ul {
-                        list-style-type: none;
-                        padding: 0;
-                    }
-                    li {
-                        margin: 5px 0;
+                    body.dark-mode .subtitle {
+                        color: var(--text-dark);
                     }
                     a {
                         color: #E46B4C;
-                        text-decoration: none;
                     }
                     a:hover {
                         text-decoration: underline;
                     }
+                    .button.is-link {
+                        background-color: #0E475F;
+                        color: #FFFFFF;
+                    }
+                    .button.is-link:hover {
+                        background-color: #DF5F2E;
+                    }
+                    """
+                ]
+                Elem.script [] [
+                    Text.raw """
+                    function toggleMode() {
+                        const body = document.body;
+                        body.classList.toggle('dark-mode');
+                        body.classList.toggle('light-mode');
+                    }
                     """
                 ]
             ]
-            Elem.body [] [
+            Elem.body [ Attr.class' "light-mode" ] [
                 Elem.div [ Attr.class' "welcome-backdrop" ] [
-                    Elem.div [ Attr.class' "container" ] [
-                        Text.h1 "Welcome to Our API"
-                        Elem.p [] [
-                            Text.raw "Explore our API capabilities and documentation for seamless integration. We follow the "
-                            Text.strong "OpenAPI v3 standard"
-                            Text.raw "."
-                        ]
-                        Elem.a [ Attr.href "/swagger"; Attr.class' "link-button" ] [
-                            Text.raw "View Swagger Documentation"
-                        ]
-                        Text.h2 "What is OpenAPI?"
-                        Elem.p [] [
-                            Text.raw "The OpenAPI Specification (OAS) is a widely adopted standard for describing RESTful APIs. It provides a format for defining endpoints, request/response formats, and more."
-                        ]
-                        Elem.p [] [
-                            Text.raw "To learn more, check out these resources:"
-                        ]
-                        Elem.ul [] [
-                            Elem.li [] [ Elem.a [ Attr.href "https://swagger.io/specification/"; Attr.target "_blank" ] [ Text.raw "Official OpenAPI Specification" ] ]
-                            Elem.li [] [ Elem.a [ Attr.href "https://github.com/OAI/OpenAPI-Specification"; Attr.target "_blank" ] [ Text.raw "OpenAPI GitHub Repository" ] ]
-                        ]
-                        Elem.p [] [
-                            Text.raw "To request a dev token, please contact us at "
-                            Elem.a [
-                                Attr.href "mailto:support@antidote-ai.com?subject=API%20Key%20Request&body=Dear%20Antidote%20AI%20Support%2C%0D%0A%0D%0AI%20would%20like%20to%20request%20an%20API%20key.%20Below%20are%20my%20details%3A%0D%0A%0D%0AName%3A%20%0D%0AEmail%3A%20%0D%0ACompany%3A%20%0D%0ATelephone%3A%20%0D%0AAdditional%20Details%3A%20%0D%0A%0D%0AThank%20you%2C%0D%0A%5BYour%20Name%5D"
-                            ] [ Text.raw "support@antidote-ai.com" ]
-                            Text.raw ". Please include the following information: your name, email, company, telephone, and any additional details about your request."
+                    Elem.div [ Attr.class' "container has-text-centered" ] [
+                        Elem.div [ Attr.class' "box" ] [
+                            Elem.h1 [ Attr.class' "title" ] [ Text.raw "Welcome to Healix API" ]
+                            Elem.p [ Attr.class' "subtitle" ] [
+                                Text.raw "Explore our API capabilities and documentation for seamless integration. We follow the "
+                                Text.strong "OpenAPI v3 standard"
+                                Text.raw "."
+                            ]
+                            Elem.a [ Attr.href "/swagger"; Attr.class' "button is-link is-medium is-rounded" ] [
+                                Text.raw "View Swagger Documentation"
+                            ]
+                            Elem.div [ Attr.class' "content mt-5" ] [
+                                Elem.h2 [ Attr.class' "title is-4" ] [ Text.raw "What is OpenAPI?" ]
+                                Elem.p [] [
+                                    Text.raw "The OpenAPI Specification (OAS) is a widely adopted standard for describing RESTful APIs. It provides a format for defining endpoints, request/response formats, and more."
+                                ]
+                                Elem.p [] [
+                                    Text.raw "To learn more, check out these resources:"
+                                ]
+                                Elem.ul [] [
+                                    Elem.li [] [ Elem.a [ Attr.href "https://swagger.io/specification/"; Attr.target "_blank" ] [ Text.raw "Official OpenAPI Specification" ] ]
+                                    Elem.li [] [ Elem.a [ Attr.href "https://github.com/OAI/OpenAPI-Specification"; Attr.target "_blank" ] [ Text.raw "OpenAPI GitHub Repository" ] ]
+                                ]
+                                Elem.p [ Attr.class' "mt-4" ] [
+                                    Text.raw "To request a dev token, please contact us at "
+                                    Elem.a [
+                                        Attr.href "mailto:support@antidote-ai.com?subject=API%20Key%20Request&body=Dear%20Antidote%20AI%20Support%2C%0D%0A%0D%0AI%20would%20like%20to%20request%20an%20API%20key.%20Below%20are%20my%20details%3A%0D%0A%0D%0AName%3A%20%0D%0AEmail%3A%20%0D%0ACompany%3A%20%0D%0ATelephone%3A%20%0D%0AAdditional%20Details%3A%20%0D%0A%0D%0AThank%20you%2C%0D%0A%5BYour%20Name%5D"
+                                    ] [ Text.raw "support@antidote-ai.com" ]
+                                    Text.raw ". Please include the following information: your name, email, company, telephone, and any additional details about your request."
+                                ]
+                            ]
+                            Elem.button [ Attr.class' "button is-small is-dark mt-4"; Attr.onclick "toggleMode()" ] [
+                                Text.raw "Toggle Dark/Light Mode"
+                            ]
                         ]
                     ]
                 ]
