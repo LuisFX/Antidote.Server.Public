@@ -138,8 +138,10 @@ module Program =
                         ]
                         Elem.p [] [
                             Text.raw "To request a dev token, please contact us at "
-                            Elem.a [ Attr.href "mailto:support@antidote-ai.com" ] [ Text.raw "support@antidote-ai.com" ]
-                            Text.raw " with the following information: your name, email, company, telephone, and any additional details about your request."
+                            Elem.a [
+                                Attr.href "mailto:support@antidote-ai.com?subject=API%20Key%20Request&body=Dear%20Antidote%20AI%20Support%2C%0D%0A%0D%0AI%20would%20like%20to%20request%20an%20API%20key.%20Below%20are%20my%20details%3A%0D%0A%0D%0AName%3A%20%0D%0AEmail%3A%20%0D%0ACompany%3A%20%0D%0ATelephone%3A%20%0D%0AAdditional%20Details%3A%20%0D%0A%0D%0AThank%20you%2C%0D%0A%5BYour%20Name%5D"
+                            ] [ Text.raw "support@antidote-ai.com" ]
+                            Text.raw ". Please include the following information: your name, email, company, telephone, and any additional details about your request."
                         ]
                     ]
                 ]
