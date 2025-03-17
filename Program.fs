@@ -50,28 +50,97 @@ module Program =
         Elem.html [ Attr.lang "en" ] [
             Elem.head [] [
                 Elem.title [] [ Text.raw "Welcome to Our API" ]
+                Elem.style [] [
+                    Text.raw """
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .welcome-backdrop {
+                        background-color: #05435c;
+                        background-image: url(https://dev.healix.antidote-ai.com/antidote_logo_slice.svg);
+                        background-repeat: no-repeat;
+                        background-position: center;
+                        background-size: cover;
+                        height: 100vh;
+                        z-index: 999;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                    }
+                    .container {
+                        text-align: center;
+                        padding: 20px;
+                        max-width: 600px;
+                        background: #FFFFFF;
+                        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+                        border-radius: 8px;
+                    }
+                    .link-button {
+                        display: inline-block;
+                        padding: 10px 20px;
+                        margin-top: 20px;
+                        background-color: #0E475F;
+                        color: #FFFFFF;
+                        border-radius: 5px;
+                        text-decoration: none;
+                        font-weight: bold;
+                    }
+                    .link-button:hover {
+                        background-color: #DF5F2E;
+                    }
+                    h1 {
+                        color: #EA7E7D;
+                    }
+                    p {
+                        color: #434D56;
+                    }
+                    ul {
+                        list-style-type: none;
+                        padding: 0;
+                    }
+                    li {
+                        margin: 5px 0;
+                    }
+                    a {
+                        color: #E46B4C;
+                        text-decoration: none;
+                    }
+                    a:hover {
+                        text-decoration: underline;
+                    }
+                    """
+                ]
             ]
-            Elem.body [ Attr.style "font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0;" ] [
-                Elem.div [ Attr.class' "container"; Attr.style "text-align: center; padding: 20px; max-width: 600px; background: #ffffff; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); border-radius: 8px;" ] [
-                    Text.h1 "Welcome to Our API"
-                    Elem.p [ Attr.style "color: #666;" ] [
-                        Text.raw "Explore our API capabilities and documentation for seamless integration. We follow the "
-                        Text.strong "OpenAPI v3 standard"
-                        Text.raw "."
-                    ]
-                    Elem.a [ Attr.href "/swagger"; Attr.class' "link-button"; Attr.style "display: inline-block; padding: 10px 20px; margin-top: 20px; background-color: #007BFF; color: #ffffff; border-radius: 5px; text-decoration: none;" ] [
-                        Text.raw "View Swagger Documentation"
-                    ]
-                    Text.h2 "What is OpenAPI?"
-                    Elem.p [ Attr.style "color: #666;" ] [
-                        Text.raw "The OpenAPI Specification (OAS) is a widely adopted standard for describing RESTful APIs. It provides a format for defining endpoints, request/response formats, and more."
-                    ]
-                    Elem.p [] [
-                        Text.raw "To learn more, check out these resources:"
-                    ]
-                    Elem.ul [] [
-                        Elem.li [] [ Elem.a [ Attr.href "https://swagger.io/specification/"; Attr.target "_blank" ] [ Text.raw "Official OpenAPI Specification" ] ]
-                        Elem.li [] [ Elem.a [ Attr.href "https://github.com/OAI/OpenAPI-Specification"; Attr.target "_blank" ] [ Text.raw "OpenAPI GitHub Repository" ] ]
+            Elem.body [] [
+                Elem.div [ Attr.class' "welcome-backdrop" ] [
+                    Elem.div [ Attr.class' "container" ] [
+                        Text.h1 "Welcome to Our API"
+                        Elem.p [] [
+                            Text.raw "Explore our API capabilities and documentation for seamless integration. We follow the "
+                            Text.strong "OpenAPI v3 standard"
+                            Text.raw "."
+                        ]
+                        Elem.a [ Attr.href "/swagger"; Attr.class' "link-button" ] [
+                            Text.raw "View Swagger Documentation"
+                        ]
+                        Text.h2 "What is OpenAPI?"
+                        Elem.p [] [
+                            Text.raw "The OpenAPI Specification (OAS) is a widely adopted standard for describing RESTful APIs. It provides a format for defining endpoints, request/response formats, and more."
+                        ]
+                        Elem.p [] [
+                            Text.raw "To learn more, check out these resources:"
+                        ]
+                        Elem.ul [] [
+                            Elem.li [] [ Elem.a [ Attr.href "https://swagger.io/specification/"; Attr.target "_blank" ] [ Text.raw "Official OpenAPI Specification" ] ]
+                            Elem.li [] [ Elem.a [ Attr.href "https://github.com/OAI/OpenAPI-Specification"; Attr.target "_blank" ] [ Text.raw "OpenAPI GitHub Repository" ] ]
+                        ]
+                        Elem.p [] [
+                            Text.raw "To request a dev token, please contact us at "
+                            Elem.a [ Attr.href "mailto:support@antidote-ai.com" ] [ Text.raw "support@antidote-ai.com" ]
+                            Text.raw " with the following information: your name, email, company, telephone, and any additional details about your request."
+                        ]
                     ]
                 ]
             ]
