@@ -45,6 +45,39 @@ type LoginResponse =
 module Program =
     open System.IO
     open Falco.Markup
+
+    let welcomePage =
+        Elem.html [ Attr.lang "en" ] [
+            Elem.head [] [
+                Elem.title [] [ Text.raw "Welcome to Our API" ]
+            ]
+            Elem.body [ Attr.style "font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0;" ] [
+                Elem.div [ Attr.class' "container"; Attr.style "text-align: center; padding: 20px; max-width: 600px; background: #ffffff; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); border-radius: 8px;" ] [
+                    Text.h1 "Welcome to Our API"
+                    Elem.p [ Attr.style "color: #666;" ] [
+                        Text.raw "Explore our API capabilities and documentation for seamless integration. We follow the "
+                        Text.strong "OpenAPI v3 standard"
+                        Text.raw "."
+                    ]
+                    Elem.a [ Attr.href "/swagger"; Attr.class' "link-button"; Attr.style "display: inline-block; padding: 10px 20px; margin-top: 20px; background-color: #007BFF; color: #ffffff; border-radius: 5px; text-decoration: none;" ] [
+                        Text.raw "View Swagger Documentation"
+                    ]
+                    Text.h2 "What is OpenAPI?"
+                    Elem.p [ Attr.style "color: #666;" ] [
+                        Text.raw "The OpenAPI Specification (OAS) is a widely adopted standard for describing RESTful APIs. It provides a format for defining endpoints, request/response formats, and more."
+                    ]
+                    Elem.p [] [
+                        Text.raw "To learn more, check out these resources:"
+                    ]
+                    Elem.ul [] [
+                        Elem.li [] [ Elem.a [ Attr.href "https://swagger.io/specification/"; Attr.target "_blank" ] [ Text.raw "Official OpenAPI Specification" ] ]
+                        Elem.li [] [ Elem.a [ Attr.href "https://github.com/OAI/OpenAPI-Specification"; Attr.target "_blank" ] [ Text.raw "OpenAPI GitHub Repository" ] ]
+                    ]
+                ]
+            ]
+        ]
+
+    // let html = renderHtml welcomePage
     let authenticate
         (authScheme : string)
         (next : bool -> HttpHandler) : HttpHandler = fun ctx ->
@@ -136,6 +169,13 @@ module Program =
                     { Type = typeof<int>; Name = "Age"; Required = false } ]
                 |> OpenApi.acceptsType typeof<string>
                 |> OpenApi.returnType typeof<string>
+
+    let rootHandler =
+        get "/" (Response.ofHtml welcomePage)
+        |> OpenApi.name "Welcome"
+        |> OpenApi.summary "Welcome to the Healix API"
+        |> OpenApi.description "This is the root endpoint of the Healix API. It provides a welcome message and instructions on how to request a token."
+        |> OpenApi.returnType typeof<string>
 
     let greeterHandler =
         mapGet "/hello/{name?}"
@@ -250,10 +290,14 @@ module Program =
     //             return! context |> Response.withStatusCode 400 |> Response.ofHtml content
     //     }
 
+
+
+
     
 
     let endpoints =
         [
+            rootHandler
             secureResourceEndpoint
             greeterHandler
             fortuneHandler
